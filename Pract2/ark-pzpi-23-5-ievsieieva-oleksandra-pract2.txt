@@ -1,0 +1,205 @@
+МІНІСТЕРСТВО ОСВІТИ І НАУКИ УКРАЇНИ
+ХАРКІВСЬКИЙ НАЦІОНАЛЬНИЙ УНІВЕРСИТЕТ РАДІОЕЛЕКТРОНІКИ
+
+
+КАФЕДРА ПРОГРАМНОЇ ІНЖЕНЕРІЇ
+
+
+
+
+Звіт
+з практичної роботи № 2 з дисципліни
+Аналіз та рефакторинг коду
+
+
+
+
+
+Виконала:                                                                                     Перевірив:
+ст. гр. ПЗПІ-23-5                        				ст. викладач кафедри ПІ
+Євсєєва Олександра						Сокорчук Ігор Петрович
+
+
+
+
+
+
+
+
+
+
+Харків 2025 
+ІСТОРІЯ ЗМІН
+
+№	Дата	Версія звіту	Опис змін та виправлень
+1	25.10.2025	0.1	Створено звіт
+2	26.10.2025	0.2	Записано відео
+ 
+
+ЗАВДАННЯ
+
+	Мета роботи: розглянути методи рефакторингу програмного коду у розробці об’єктно-орієнтованих програм мовою Java: Collapse Hierarchy, Replace Data Value with Object, Replace Exception with Test.
+ 
+ОПИС ВИКОНАНОЇ РОБОТИ
+
+Рефакторинг — це зміна внутрішньої структури коду без зміни його поведінки.
+Тобто програма працює так само, але її архітектура стає краще.
+Мета рефакторингу:
+•	зробити код читабельним,
+•	зменшити дублювання,
+•	спростити підтримку в майбутньому.
+Java — класична мова ООП, тому саме на ній чудово видно, як застосовуються різні техніки рефакторингу.
+Сьогодні я покажу три з них:
+1.	Collapse Hierarchy
+2.	Replace Data Value with Object
+3.	Replace Exception with Test
+Перша техніка — Collapse Hierarchy, або "Згортання ієрархії".
+Її суть у тому, що якщо підклас майже нічим не відрізняється від батьківського класу, його краще об’єднати.
+Так ми спрощуємо структуру програми і позбуваємось зайвих рівнів наслідування.
+На слайді приклад:
+Був клас Employee і підклас OfficeEmployee, який нічого не додавав.
+В результаті ми просто прибрали підклас і залишили один клас Employee.
+Це невелика зміна, але вона прибирає непотрібну складність.
+Ми мали клас Report і підклас PdfReport, який відрізнявся лише одним методом — export().
+Ми можемо просто перенести цю поведінку у сам клас Report і позбутися зайвої ієрархії. Тепер клас Report має методи print() і exportAsPdf(). 
+Друга техніка — Replace Data Value with Object.
+Вона полягає в тому, щоб замінити просте значення — наприклад, рядок або число — повноцінним об’єктом, якщо це значення має додаткову логіку або атрибути.
+У прикладі на слайді ми мали клас Order, у якому клієнт був просто рядком — String customer.
+Після рефакторингу ми створили окремий клас Customer.
+Тепер ми можемо додати до нього поля, методи, наприклад, “рівень лояльності” чи “знижки”.
+У класі Product категорія товару зберігалася як простий текст — String category.
+Після рефакторингу ми створюємо клас Category, де можемо додати пріоритет, тип, правила сортування тощо. Тепер об’єкти Product і Category пов’язані між собою логічно, і код легко розширювати. Це гарний приклад переходу від примітивного мислення до об’єктно-орієнтованого.
+Третя техніка — Replace Exception with Test.
+Дуже часто у коді розробники використовують try-catch, щоб перевірити нормальні ситуації. Але винятки створені для несподіваних помилок, а не для звичайної логіки.
+У прикладі ми бачимо код, який намагається перетворити рядок у число.
+Якщо рядок неправильний, ловимо виняток. Після рефакторингу ми просто перевіряємо рядок регулярним виразом — чи складається він лише з цифр. Якщо так — перетворюємо, якщо ні — показуємо повідомлення.
+Спочатку код намагається знайти користувача в базі даних і, якщо його немає, ловить UserNotFoundException.
+Після рефакторингу ми додаємо простий метод userExists(id), який перевіряє, чи є користувач.
+Тоді ми не ловимо виняток, а просто виконуємо логічну перевірку.
+Це робить код більш передбачуваним і полегшує налагодження.
+Підсумуємо. Три прийоми, які ми розглянули, допомагають зробити код зрозумілішим і легшим у підтримці. Отже, рефакторинг — це турбота про майбутнє коду. Його мета — не зробити програму складнішою, а навпаки — зробити її простішою, чистішою та зрозумілішою.
+ 
+ВИСНОВКИ
+
+	Під час виконання практичної роботи було розглянуто методи рефакторингу програмного коду у розробці об’єктно-орієнтованих програм мовою Java: Collapse Hierarchy, Replace Data Value with Object, Replace Exception with Test.
+ 
+ВИКОРИСТАНІ ДЖЕРЕЛА
+
+1.	Refactoring guru. Collapse Hierarchy URL: : https://refactoring.guru/collapse-hierarchy (дата звернення: 26.10.2025)
+2.	Refactoring guru. Replace Data Value with Object URL: https://refactoring.guru/replace-data-value-with-object (дата звернення: 26.10.2025)
+3.	Refactoring guru. Replace Exception with Test URL: https://refactoring.guru/replace-exception-with-test (дата звернення: 26.10.2025)
+ 
+ДОДАТОК А
+
+Відеозапис доповіді: https://youtu.be/TJpo8KrmPSk
+00:01 - Вступ до рефакторингу
+00:27 - Техніка згортання ієрархії (Collapse Hierarchy)
+02:21 - Заміна простого значення об'єктом (Replace Data Value with Object) 
+04:40 - Заміна винятку на перевірку (Replace Exception with Test) 
+06:23 - Висновок
+ 
+ 
+ДОДАТОК Б
+Слайди презентації
+
+ 
+Рисунок Б.1 — Титульний слайд
+ 
+Рисунок Б.2 — Collapse Hierarchy
+ 
+Рисунок Б.3 — Collapse Hierarchy (продовження)
+ 
+Рисунок Б.4 — Replace Data Value with Object
+ 
+Рисунок Б.5 — Replace Data Value with Object (продовження)
+ 
+Рисунок Б.6 — Replace Exception with Test
+ 
+Рисунок Б.7 — Replace Exception with Test (продовження)
+ 
+Рисунок Б.8 — Висновки доповіді м
+ 
+ДОДАТОК В
+Програмний код
+
+В.1 Replace Data Value with Object (До)
+1 class Order {
+2 private String customer;
+3 }
+
+В.2 Replace Data Value with Object (Після)
+1 class Customer {
+2 private String name;
+3 }
+4 class Order {
+5 private Customer customer;
+6 }
+
+В.3 Replace Data Value with Object (До)
+1 class Product {
+2 private String category;
+3 }
+
+В.4 Replace Data Value with Object (Після)
+1 class Category {
+2 private String name;
+3 private int priority;
+4 }
+5 class Product {
+6 private Category category;
+7 }
+
+В.5 Replace Data Value with Object (До)
+1 class Order { 
+2 private String customer; 
+3 }
+
+
+В.6 Replace Data Value with Object (Після)
+1 class Customer {
+2   private String name;
+3 }
+4 class Order {
+5   private Customer customer;
+6 }
+
+В.7 Replace Data Value with Object (До)
+1 class Product {
+2   private String category;
+3 }
+
+В.8 Replace Data Value with Object (Після)
+1 class Category {
+2   private String name;    private int priority;
+3 }
+4 class Product {
+5   private Category category;
+6 }
+
+В.9 Replace Exception with Test (До)
+1 try {
+2   int price = Integer.parseInt(input);
+3 } catch (NumberFormatException e) {
+4   System.out.println("Invalid number");
+5 }
+
+В.10 Replace Exception with Test (Після)
+1 if (input.matches("\\d+")) {
+2   int price = Integer.parseInt(input);
+3 } else {
+4   System.out.println("Invalid number");
+5 }
+
+В.11 Replace Exception with Test (До)
+1 try {
+2   User user = db.findUser(id);
+3 } catch (UserNotFoundException e) {
+4   System.out.println("User not found");
+5 }
+
+В.11 Replace Exception with Test (Після)
+1 if (db.userExists(id)) {
+2   User user = db.findUser(id);
+3 } else {
+4   System.out.println("User not found");
+5 }
