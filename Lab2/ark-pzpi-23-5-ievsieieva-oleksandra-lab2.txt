@@ -1,0 +1,281 @@
+МІНІСТЕРСТВО ОСВІТИ І НАУКИ УКРАЇНИ
+ХАРКІВСЬКИЙ НАЦІОНАЛЬНИЙ УНІВЕРСИТЕТ РАДІОЕЛЕКТРОНІКИ
+
+
+КАФЕДРА ПРОГРАМНОЇ ІНЖЕНЕРІЇ
+
+
+
+
+Звіт
+з лабораторної роботи № 2 з дисципліни
+Аналіз та рефакторинг коду
+
+
+
+
+
+Виконала:                                                                                     Перевірив:
+ст. гр. ПЗПІ-23-5                        				ст. викладач кафедри ПІ
+Євсєєва Олександра						Сокорчук Ігор Петрович
+
+
+
+
+
+
+
+
+
+
+Харків 2025 
+ІСТОРІЯ ЗМІН
+
+№	Дата	Версія звіту	Опис змін та виправлень
+1	24.11.2025	0.1	Створено звіт
+ 
+
+ЗАВДАННЯ
+
+Ознайомитися з процесом розробки серверної частини програмної системи, включаючи проектування бази даних (БД), розробку API для взаємодії з клієнтами, та перевірку (тестування) їхньої взаємодії. Оволодіти методами проектування діаграм UML та ER, розробки БД, програмної реалізації API, а також роботи з репозиторіями Git та створення технічної документації.
+Завдання:
+
+ 
+ОПИС ВИКОНАНОЇ РОБОТИ
+
+Серверна частина системи збудована за принципом розподіленої клієнт–серверної архітектури з окремими компонентами для API, бізнес-логіки, шаром доступу до даних і інтеграційним шаром для IoT (Matter). Таке поділення забезпечує модульність, полегшує тестування й масштабування.
+	У системі визначені такі ключові моделі (див. рисунок 1):
+•	Home (Дім/Простір) — логічний простір, що належить або адмініструється користувачем; представляє квартиру, будинок або офіс.
+•	Group (Група) — логічний набір пристроїв у межах Home для колективного керування.
+•	Lamp (Лампа) — фізичний або віртуальний пристрій освітлення з унікальним ідентифікатором Matter, властивостями для налаштування.
+Користувач володіє одним або кількома Home; у Home знаходяться Lamp. 
+1.	Groups прив’язуються до Home і містять Lamp. 
+Містить:
+•	HomeId (PK) — унікальний ідентифікатор дому.
+•	Name — назва дому (наприклад, «Моя квартира», «Офіс 2 поверх»).
+Дім є кореневою сутністю, до якої належать групи ламп.
+2.	Сутність Group (Група ламп)
+Містить:
+•	GroupId (PK) — унікальний ID групи.
+•	HomeId (FK) — зовнішній ключ на Home, що означає, що кожна група належить певному дому.
+•	Name — назва групи.
+•	Description — опис групи.
+Кожна група обов’язково прив’язана до конкретного дому.
+3.	Сутність Lamp (Лампа)
+Містить:
+•	LampId (PK) — унікальний ID лампи.
+•	GroupId (FK) — посилання на групу, у яку входить лампа.
+•	isOnline — стан підключення лампи (онлайн/офлайн).
+•	R, G, B — значення кольору у форматі RGB, кожне в діапазоні 0–255.
+•	Brightness — рівень яскравості (0–255).
+
+ 
+Рисунок 1 – ER діаграма бази даних
+
+Кожна таблиця має атомарні поля; немає полів зі списками або повторюваними групами. Що забезпечує 1NF.
+Основні таблиці мають прості первинні ключі (ID) або коректно сконструйовані складені ключі. Атрибути, що логічно залежать від частини складеного ключа, відокремлені в окремі сутності, тому часткових залежностей немає.
+Транзитивних залежностей уникнуто: дані, що залежать від іншої таблиці (наприклад, власник дому), зберігаються в окремих сутностях і посилаються через FK; похідні або агреговані дані мають зберігатися в окремих таблицях або матеріалізованих уявленнях при необхідності. Таким чином структура відповідає 3NF.
+Фізична діаграма повинна показувати таблиці з основними полями, типами полів, а також обмеження, індекси та правила каскадування при видаленні (див. рисунок 2).
+ 
+Рисунок 2 – Діаграма структури БД
+
+На UML діаграмі зображено взаємодію користувача із серверною частиною системи автоматичного керування освітленням. Є один основний актор —Користувач, який виконує всі операції, пов’язані з керуванням лампами та групами ламп (див. рисунок 3).
+Діаграма розділена на два логічні блоки: керування групами та керування окремими лампами.
+ 
+Рисунок 3 – UML діаграма
+
+Користувач має можливість виконувати такі операції:
+•	Створення групи — ініціація створення нової логічної групи ламп (наприклад, «Коридор», «Вітальня»).
+•	Редагування групи — зміна назви або параметрів групи.
+•	Видалення групи — повне вилучення групи зі списку.
+•	Увімкнення/вимкнення групи — одночасне керування станом усіх ламп у групі.
+•	Керування яскравістю групи
+•	Зміна кольору групи
+Користувач керує кожною лампою окремо через наступні дії:
+•	Додавання лампи — реєстрація нової лампи в системі.
+•	Редагування лампи — зміна властивостей лампи (наприклад, назви).
+•	Видалення лампи
+•	Увімкнення/вимкнення лампи
+•	Керування яскравістю лампи
+•	Зміна кольору лампи
+Таким чином, UML-діаграма відображає повний цикл керування освітленням на рівні окремих елементів і цілих груп одночасно.
+	Доступ до даних реалізується за допомогою ORM, що забезпечує зручне відображення об’єктів у таблиці. Було визначено стандартний набір CRUD-операцій для кожної сутності: створення, читання, оновлення та видалення. Репозиторії для Home, Group та Lamp повинні інкапсулювати всі операції, необхідні для функціонування системи, забезпечуючи транзакційну цілісність.
+	Нижче реалізація репозиторію для груп, аналогічна для лампочок:
+1 class PostgresGroupRepository : GroupRepository {
+ 2     override suspend fun getGroups(): List<Group> =
+ 3         suspendTransaction {
+ 4             GroupDao.all().map { it.daoToModel() }
+ 5         }
+ 6
+ 7     override suspend fun create(group: Group): Group =
+ 8         suspendTransaction {
+ 9             val dao = GroupDao.new {
+10                 name = group.name
+11                 description = group.description
+12             }
+13
+14             dao.daoToModel()
+15         }
+16
+17     override suspend fun delete(groupId: Int): Unit = suspendTransaction {
+18         GroupTable.deleteWhere { GroupTable.id eq groupId }
+19     }
+20
+21     override suspend fun update(group: Group) : Unit = suspendTransaction {
+22         group.groupId?.let { id ->
+23             GroupTable.update( { GroupTable.id eq id }) {
+24                 it[name] = group.name
+25                 it[description] = group.description
+26             }
+27         }
+28     }
+29
+30     override suspend fun getGroupById(groupId: Int): Group? = suspendTransaction {
+31         GroupDao.find { GroupTable.id eq groupId }
+32             .limit(1)
+33             .map { it.daoToModel() }
+34             .firstOrNull()
+35     }
+36 }
+
+Було визначено, що взаємодія серверної частини з клієнтами буде здійснюватися через REST-API. Такий підхід забезпечує простоту, універсальність і сумісність із широким спектром клієнтських застосунків. Для кожного ресурсу — дому, групи й лампи — визначено власні URI та методи взаємодії (GET, POST, PUT, DELETE). API підтримує передачу параметрів у JSON-форматі та повертає структуровані відповіді.
+Опис API включає призначення кожного маршруту, формат запиту та очікуваний формат відповіді. 
+Нижче реалізація API для групи для отримання групи за Id:
+1 fun Route.getGroupById() {
+ 2     get("group/getById") {
+ 3         val repository by application.inject<GroupRepository>()
+ 4
+ 5         val groupId = call.parameters["groupId"]?.runCatching { toInt() }?.getOrNull() ?: run {
+ 6             return@get call.respond(
+ 7                 status = HttpStatusCode.BadRequest,
+ 8                 message = Error(message = "Group bad request")
+ 9             )
+10         }
+11
+12         val lamp = repository.getGroupById(groupId = groupId) ?: return@get call.respond(
+13             status = HttpStatusCode.NotFound,
+14             message = Error(message = "Group not found")
+15         )
+16
+17         call.respond(
+18             status = HttpStatusCode.OK,
+19             message = lamp
+20         )
+21     }
+22 }
+Нижче реалізація API для групи для створення:
+1 fun Route.createGroup() {
+ 2     post("group") {
+ 3         val repository by application.inject<GroupRepository>()
+ 4
+ 5         val request = call.runCatching {
+ 6             receiveNullable<GroupRequest>()
+ 7         }.getOrNull() ?: run {
+ 8             call.respond(
+ 9                 status = HttpStatusCode.BadRequest,
+10                 message = Error(message = "Bad Request")
+11             )
+12             return@post
+13         }
+14
+15         call.respond(
+16             status = HttpStatusCode.OK,
+17             message = repository.create(
+18                 group = Group(
+19                     name = request.name,
+20                     description = request.description,
+21                 )
+22             )
+23         )
+24     }
+25 }
+Нижче реалізація API для групи для видалення:
+1 fun Route.deleteGroup() {
+ 2     delete("group/{groupId}") {
+ 3         val repository by application.inject<GroupRepository>()
+ 4
+ 5         val groupId = call.parameters["groupId"]?.runCatching { toInt() }?.getOrNull() ?: run {
+ 6             return@delete call.respond(
+ 7                 status = HttpStatusCode.BadRequest,
+ 8                 message = Error(message = "Group bad request")
+ 9             )
+10         }
+11
+12         repository.delete(groupId = groupId)
+13
+14         call.respond(
+15             status = HttpStatusCode.NoContent,
+16             message = "Group deleted successfully"
+17         )
+18     }
+19 }
+
+Нижче реалізація API для групи для отримання всіх груп:
+1 fun Route.getGroups() {
+ 2     get("group") {
+ 3         val repository by application.inject<GroupRepository>()
+ 4
+ 5         val groups = repository.getGroups()
+ 6         if(groups.isEmpty()) {
+ 7             return@get call.respond(
+ 8                 status = HttpStatusCode.NotFound,
+ 9                 message = Error(message = "Groups not found")
+10             )
+11         }
+12
+13         call.respond(
+14             status = HttpStatusCode.OK,
+15             message = groups
+16         )
+17     }
+18 }
+Нижче реалізація API для групи для редагування:
+1 fun Route.updateGroup() {
+ 2     put("group") {
+ 3         val repository by application.inject<GroupRepository>()
+ 4
+ 5         val request = call.runCatching {
+ 6             receiveNullable<GroupRequest>()
+ 7         }.getOrNull() ?: run {
+ 8             return@put call.respond(
+ 9                 status = HttpStatusCode.BadRequest,
+10                 message = Error(message = "Bad Request")
+11             )
+12         }
+13
+14         val group = request.toModel()
+15         repository.update(group = group)
+16
+17         call.respond(
+18             status = HttpStatusCode.OK,
+19             message = group
+20         )
+21     }
+22 }
+	Після розробки було проведено тестування основних функцій системи. Перевірялася коректність взаємодії API з базою даних, правильність обробки введених даних та відповідність фактичної поведінки системи описаній бізнес-логіці. Тести було проведено за допомогою Postman Flow [Додаток А]. 
+ 
+ВИСНОВКИ
+
+У результаті виконання роботи було розроблено повну структуру серверної частини програмної системи керування освітленням. Описано архітектуру, створено UML-діаграму прецедентів та ER-діаграму, спроєктовано базу даних та описано вимоги до нормалізації. Розроблено концепцію REST-API, що підтримує всі необхідні операції, а також визначено структуру репозиторіїв для роботи з даними.
+ 
+ВИКОРИСТАНІ ДЖЕРЕЛА
+
+1.	Exposed – офіційна документація. URL:  https://github.com/JetBrains/Exposed (дата звернення: 25.11.2025)
+2.	Koin – офіційна документація. URL: https://insert-koin.io (дата звернення: 25.11.2025)
+3.	Фаулер, Мартін. UML Distilled: A Brief Guide to the Standard Object Modeling Language.
+4.	Lucidchart UML & ER guides онлайн-ресурс щодо діаграм. URL: https://www.lucidchart.com/pages/er-diagram (дата звернення: 25.11.2025)
+5.	Онлайн ресурс для створення діаграм Draw.io. URL: https://www.diagrams.net/doc/ (дата звернення: 25.11.2025)
+ 
+ДОДАТОК А
+
+Відеозапис: https://youtu.be/UZHZ0PmJZcg
+00:00 - ER-діаграма
+00:54 - Діаграма бази даних
+1:49 - UML діаграма
+2:52 - Пояснення реалізації 
+8:10 - Тестування API
+ 
+ 
+ДОДАТОК Б
+
+Повністю код можна подивитись за посиланням: https://github.com/NureIevsieievaOleksandra/ark-pzpi-23-5-ievsieieva-oleksandra/tree/main/Lab2/src 
